@@ -51,13 +51,7 @@ func calc(source io.Reader) (int, error) {
 			return 0, fmt.Errorf("reader read line: %w", err)
 		}
 
-		line := string(b)
-		if line == "" {
-			break
-		}
-
-		marks := strings.Split(line, " ")
-
+		marks := strings.Split(string(b), " ")
 		opponentMark, santaMark := marks[0], marks[1]
 		score += markValues[santaMark]
 		if opponentMarks[winMap[santaMark]] == opponentMark {
