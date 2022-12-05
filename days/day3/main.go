@@ -6,16 +6,25 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 var ErrNoCollisionFound = errors.New("no collision found")
 
+func checkInStash(val byte, bs []byte) bool {
+	for _, b := range bs {
+		if b == val {
+			return true
+		}
+	}
+
+	return false
+}
+
 func findCollision(a []byte, b []byte) (byte, bool) {
 	for _, bCh := range b {
-		for _, aCh := range a {
-			if bCh == aCh {
-				return bCh, true
-			}
+		if checkInStash(bCh, a) {
+			return bCh, true
 		}
 	}
 
@@ -67,6 +76,43 @@ func calcPriority(source io.Reader) (int, error) {
 	return priority, nil
 }
 
+func calcGroupStashPriority(stashes [3]string) int {
+	for _, ch := range stashes[0] {
+		if strings.Contains(stashes[1], string(ch)) &&
+			strings.Contains(stashes[2], string(ch)) {
+			return collisionToPriority(byte(ch))
+		}
+	}
+
+	return 0
+}
+
+func calcPriorityP2(source io.Reader) (int, error) {
+	priority := 0
+	groupSize := 3
+	r := bufio.NewReader(source)
+	iterating := true
+	for iterating {
+		groupStash := [3]string{
+			"", "", "",
+		}
+		for i := 0; i < groupSize; i++ {
+			b, _, err := r.ReadLine()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					iterating = false
+				} else {
+					return 0, fmt.Errorf("reader read line: %w", err)
+				}
+			}
+			groupStash[i] = string(b)
+		}
+		priority += calcGroupStashPriority(groupStash)
+	}
+
+	return priority, nil
+}
+
 func main() {
 	f, err := os.Open("days/day3/input.txt")
 	if err != nil {
@@ -78,5 +124,13 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(priority)
+	fmt.Println("Priority p1: ", priority)
+
+	f.Seek(0, 0)
+	priority, err = calcPriorityP2(f)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Priority p2: ", priority)
 }
