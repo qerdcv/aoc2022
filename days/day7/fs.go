@@ -1,15 +1,21 @@
 package main
 
-type elType uint8
+type fType uint8
 
 const (
-	elTypeFile elType = iota
-	elTypeDir
+	file fType = iota
+	dir
+)
+
+const (
+	rootDir = "/"
+	prevDir = ".."
+	curDir  = "."
 )
 
 type fs struct {
 	name    string
-	t       elType
+	t       fType
 	content map[string]*fs
 	size    uint
 }
@@ -17,32 +23,32 @@ type fs struct {
 func newFs() *fs {
 	f := &fs{
 		name:    "/",
-		t:       elTypeDir,
+		t:       dir,
 		content: make(map[string]*fs),
 		size:    0,
 	}
-	f.content[".."] = f
-	f.content["."] = f
-	f.content["/"] = f
+	f.content[prevDir] = f
+	f.content[curDir] = f
+	f.content[rootDir] = f
 	return f
 }
 
 func (f *fs) addDir(name string) {
 	newFs := &fs{
 		name:    name,
-		t:       elTypeDir,
+		t:       dir,
 		content: make(map[string]*fs),
 		size:    0,
 	}
-	newFs.content[".."] = f
-	newFs.content["."] = newFs
+	newFs.content[prevDir] = f
+	newFs.content[curDir] = newFs
 	f.content[name] = newFs
 }
 
 func (f *fs) addFile(name string, size uint) {
 	f.content[name] = &fs{
 		name: name,
-		t:    elTypeFile,
+		t:    file,
 		size: size,
 	}
 	f.incrementSize(size)
@@ -51,9 +57,13 @@ func (f *fs) addFile(name string, size uint) {
 func (f *fs) incrementSize(size uint) {
 	currentFs := f
 
-	for ; currentFs.name != "/"; currentFs = currentFs.content[".."] {
+	for ; currentFs.name != rootDir; currentFs = currentFs.content[".."] {
 		currentFs.size += size
 	}
 
 	currentFs.size += size
+}
+
+func isNameReserved(name string) bool {
+	return name == rootDir || name == curDir || name == prevDir
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -10,27 +9,23 @@ import (
 	"strings"
 )
 
+const (
+	updateSize  uint = 30_000_000
+	totalFsSize uint = 70_000_000
+)
+
 func buildFs(source io.Reader) (*fs, error) {
-	r := bufio.NewReader(source)
+	s := bufio.NewScanner(source)
 
 	root := newFs()
 	currentFs := root
-	scanning := true
-	for scanning {
-		b, _, err := r.ReadLine()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				scanning = false
-			} else {
-				return nil, fmt.Errorf("read all: %w", err)
-			}
-		}
+	for s.Scan() {
+		line := s.Text()
 
-		line := string(b)
 		cmd := strings.Split(line, " ")
 		switch cmd[0] {
 		case "":
-			scanning = false
+			return root, nil
 		case "$":
 			switch cmd[1] {
 			case "cd":
@@ -52,46 +47,43 @@ func buildFs(source io.Reader) (*fs, error) {
 	return root, nil
 }
 
-// TODO: make it without global variable
-var sizeSum uint
-
-func iterFsTreeP1(f *fs) {
+func iterFsTreeP1(f *fs) uint {
+	var sizeSum uint = 0
 	for name, innerFs := range f.content {
-		if name == "/" || name == ".." || name == "." {
+		if isNameReserved(name) {
 			continue
 		}
 
-		if innerFs.t == elTypeDir {
+		if innerFs.t == dir {
 			if innerFs.size <= 100000 {
 				sizeSum += innerFs.size
 			}
 
-			iterFsTreeP1(innerFs)
+			sizeSum += iterFsTreeP1(innerFs)
 		}
 	}
+
+	return sizeSum
 }
 
-const (
-	updateSize  uint = 30_000_000
-	totalFsSize uint = 70_000_000
-)
-
-// TODO: make it without global variable
-var currentDeletePretendent uint = totalFsSize
-
-func iterFsTreeP2(f *fs, requiredSpace uint) {
+func iterFsTreeP2(f *fs, requiredSpace uint, delPretSize uint) uint {
 	for name, innerFs := range f.content {
-		if name == "/" || name == ".." || name == "." {
+		if isNameReserved(name) {
 			continue
 		}
 
-		if innerFs.t == elTypeDir {
-			if size := innerFs.size; size < currentDeletePretendent && size >= requiredSpace {
-				currentDeletePretendent = size
+		if innerFs.t == dir {
+			if size := innerFs.size; size < delPretSize && size >= requiredSpace {
+				delPretSize = size
 			}
-			iterFsTreeP2(innerFs, requiredSpace)
+
+			if newDelPretSize := iterFsTreeP2(innerFs, requiredSpace, delPretSize); newDelPretSize < delPretSize {
+				delPretSize = newDelPretSize
+			}
 		}
 	}
+
+	return delPretSize
 }
 
 func main() {
@@ -105,9 +97,6 @@ func main() {
 		panic(err)
 	}
 
-	iterFsTreeP1(fileSystem)
-	fmt.Println("part 1 -", sizeSum)
-
-	iterFsTreeP2(fileSystem, fileSystem.size-(totalFsSize-updateSize))
-	fmt.Println("part 2 -", currentDeletePretendent)
+	fmt.Println("part 1 -", iterFsTreeP1(fileSystem))
+	fmt.Println("part 2 -", iterFsTreeP2(fileSystem, fileSystem.size-(totalFsSize-updateSize), totalFsSize))
 }
