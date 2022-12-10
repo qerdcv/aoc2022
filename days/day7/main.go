@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -98,22 +97,6 @@ func main() {
 		panic(err)
 	}
 
-	var times []int
-
-	for i := 0; i < 1000; i++ {
-		start := time.Now()
-		times = append(times, int(
-			time.Since(start).Microseconds()))
-	}
-
-	avg := 0
-	for _, t := range times {
-		avg += t
-	}
-
-	fmt.Println(float64(avg) / float64(len(times)))
-
-	// iterFsTreeP2(fileSystem, fileSystem.size-(totalFsSize-updateSize), totalFsSize)
-	// iterFsTreeP1(fileSystem)
-	// fmt.Println("part 2 -", )
+	fmt.Println(iterFsTreeP1(fileSystem))
+	fmt.Println("part 2 -", iterFsTreeP2(fileSystem, fileSystem.size-(totalFsSize-updateSize), totalFsSize))
 }
