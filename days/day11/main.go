@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/big"
 	"os"
 	"strconv"
 	"strings"
@@ -39,15 +38,15 @@ func parseMonkeys(source io.Reader) []*monkey {
 		switch attribute {
 		case "Starting items":
 			for _, itm := range strings.Split(value, " ") {
-				item, _ := strconv.ParseInt(itm, 10, 64)
-				m.addItem(big.NewInt(item))
+				item, _ := strconv.ParseUint(itm, 10, 64)
+				m.addItem(item)
 			}
 		case "Operation":
 			m.setExpression(strings.Split(value, " = ")[1])
 		case "Test":
 			rawTestVal := strings.Split(value, " ")
-			testVal, _ := strconv.ParseInt(rawTestVal[len(rawTestVal)-1], 10, 64)
-			m.setTest(big.NewInt(testVal))
+			testVal, _ := strconv.ParseUint(rawTestVal[len(rawTestVal)-1], 10, 64)
+			m.setTest(testVal)
 		case "If true":
 			rawTrueCond := strings.Split(value, " ")
 			trueCond, _ := strconv.Atoi(rawTrueCond[len(rawTrueCond)-1])
@@ -62,11 +61,20 @@ func parseMonkeys(source io.Reader) []*monkey {
 	return ms
 }
 
-func solveP1(source io.Reader, rounds int, worryLevelDiv int64) int {
-	ms := parseMonkeys(source)
-	bigWorryLevel := big.NewInt(worryLevelDiv)
-	bigZero := big.NewInt(0)
+func getOverlap(ms []*monkey) uint64 {
+	result := ms[0].test
+	ms = ms[1:]
+	for _, m := range ms {
+		result *= m.test
+	}
 
+	return result
+}
+
+func solveP1(source io.Reader, rounds int, worryLevelDiv uint64) int {
+	ms := parseMonkeys(source)
+	overlap := getOverlap(ms)
+	fmt.Println(overlap)
 	for i := 1; i <= rounds; i++ {
 		if i%100 == 0 {
 			fmt.Printf("Processing %d round.\n", i)
@@ -81,7 +89,7 @@ func solveP1(source io.Reader, rounds int, worryLevelDiv int64) int {
 				rawArg2 := expr[2]
 
 				var (
-					arg1, arg2 *big.Int
+					arg1, arg2 uint64
 				)
 
 				arg1 = item
@@ -89,22 +97,25 @@ func solveP1(source io.Reader, rounds int, worryLevelDiv int64) int {
 				if rawArg2 == "old" {
 					arg2 = item
 				} else {
-					intArg2, _ := strconv.ParseInt(rawArg2, 10, 64)
-					arg2 = big.NewInt(intArg2)
+					arg2, _ = strconv.ParseUint(rawArg2, 10, 64)
 				}
 
-				var newItem *big.Int
+				var newItem uint64
 				switch operand {
 				case "*":
-					newItem = arg1.Mul(arg1, arg2)
+					newItem = arg1 * arg2
 				case "+":
-					newItem = arg1.Add(arg1, arg2)
+					newItem = arg1 + arg2
 				}
 
-				newItem.Div(newItem, bigWorryLevel)
-				itemToInsert := new(big.Int).Set(newItem)
-				mIdx := m.conditions[newItem.Mod(newItem, m.test).Cmp(bigZero) == 0]
-				ms[mIdx].items = append(ms[mIdx].items, itemToInsert)
+				if worryLevelDiv == 1 {
+					newItem %= overlap
+				} else {
+					newItem /= 3
+				}
+
+				mIdx := m.conditions[newItem%m.test == 0]
+				ms[mIdx].items = append(ms[mIdx].items, newItem)
 				m.inspectCount++
 			}
 		}
@@ -127,14 +138,14 @@ func solveP1(source io.Reader, rounds int, worryLevelDiv int64) int {
 }
 
 func main() {
-	{
-		f, err := os.Open("days/day11/input.txt")
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		fmt.Println(solveP1(f, 20, 3))
-	}
+	//{
+	//	f, err := os.Open("days/day11/input.txt")
+	//	if err != nil {
+	//		log.Fatalln(err)
+	//	}
+	//
+	//	fmt.Println(solveP1(f, 20, 3))
+	//}
 	{
 		f, err := os.Open("days/day11/input.txt")
 		if err != nil {
