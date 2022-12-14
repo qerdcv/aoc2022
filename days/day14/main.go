@@ -43,62 +43,62 @@ func buildCave(source io.Reader) cave {
 func solveP1(source io.Reader) int {
 	c := buildCave(source)
 
-	sandInRest := 0
-	for { // until sand is not fallen into void
-		sand := point{x: 500, y: 1}
-		for { // until sand is not in rest
-			if c.isPointTaken(point{sand.x, sand.y + 1}, false) {
-				if !c.isPointTaken(point{sand.x - 1, sand.y + 1}, false) {
-					sand = point{sand.x - 1, sand.y + 1}
+	sPointInRest := 0
+	for { // until sPoint is not fallen into void
+		sPoint := point{x: 500, y: 1}
+		for { // until sPoint is not in rest
+			if c.isPointTaken(point{sPoint.x, sPoint.y + 1}, false) {
+				if !c.isPointTaken(point{sPoint.x - 1, sPoint.y + 1}, false) {
+					sPoint = point{sPoint.x - 1, sPoint.y + 1}
 					continue
 				}
 
-				if !c.isPointTaken(point{sand.x + 1, sand.y + 1}, false) {
-					sand = point{sand.x + 1, sand.y + 1}
+				if !c.isPointTaken(point{sPoint.x + 1, sPoint.y + 1}, false) {
+					sPoint = point{sPoint.x + 1, sPoint.y + 1}
 					continue
 				}
 
-				c.drawPoint(sand)
-				sandInRest += 1
+				c.drawPoint(sPoint)
+				sPointInRest += 1
 				break
 			}
 
-			sand = point{sand.x, sand.y + 1}
-			if sand.y > c.bottomLim {
-				return sandInRest
+			sPoint = point{sPoint.x, sPoint.y + 1}
+			if sPoint.y > c.bottomLim {
+				return sPointInRest
 			}
 		}
 	}
+
 }
 
 func solveP2(source io.Reader) int {
 	c := buildCave(source)
-
-	sandInRest := 0
-	for { // while sand is not in start position
-		sand := point{x: 500, y: 0}
-		if c.isPointTaken(sand, true) {
-			return sandInRest
+	sPointInRest := 0
+	for { // while sPoint is not in start position
+		sPoint := point{x: 500, y: 0}
+		if c.isPointTaken(sPoint, true) {
+			return sPointInRest
 		}
 
-		for { // until sand is not in rest state
-			if c.isPointTaken(point{sand.x, sand.y + 1}, true) {
-				if !c.isPointTaken(point{sand.x - 1, sand.y + 1}, true) {
-					sand = point{sand.x - 1, sand.y + 1}
+		for { // until sPoint is not in rest state
+			if c.isPointTaken(point{sPoint.x, sPoint.y + 1}, true) {
+				if !c.isPointTaken(point{sPoint.x - 1, sPoint.y + 1}, true) {
+					sPoint = point{sPoint.x - 1, sPoint.y + 1}
 					continue
 				}
 
-				if !c.isPointTaken(point{sand.x + 1, sand.y + 1}, true) {
-					sand = point{sand.x + 1, sand.y + 1}
+				if !c.isPointTaken(point{sPoint.x + 1, sPoint.y + 1}, true) {
+					sPoint = point{sPoint.x + 1, sPoint.y + 1}
 					continue
 				}
 
-				c.drawPoint(sand)
-				sandInRest += 1
+				c.drawPoint(sPoint)
+				sPointInRest += 1
 				break
 			}
 
-			sand = point{sand.x, sand.y + 1}
+			sPoint = point{sPoint.x, sPoint.y + 1}
 		}
 	}
 }

@@ -4,9 +4,16 @@ import (
 	"fmt"
 )
 
+type item int
+
+const (
+	stone item = iota + 1
+	sand
+)
+
 type cave struct {
-	c         map[string]bool
-	bottomLim int
+	c                            map[string]item
+	bottomLim, leftLim, rightLim int
 }
 
 type point struct {
@@ -15,19 +22,27 @@ type point struct {
 
 func newCave() cave {
 	return cave{
-		c: make(map[string]bool, 100),
+		c: make(map[string]item, 100),
 	}
 }
 
 func (c *cave) drawLineToLeft(from point, dx int) {
 	for x := from.x; x > from.x+dx-1; x-- {
-		c.c[fmt.Sprintf("%d,%d", x, from.y)] = true
+		if x > c.rightLim {
+			c.rightLim = x
+		}
+
+		c.c[fmt.Sprintf("%d,%d", x, from.y)] = stone
 	}
 }
 
 func (c *cave) drawLineToRight(from point, dx int) {
 	for x := from.x; x < from.x+dx+1; x++ {
-		c.c[fmt.Sprintf("%d,%d", x, from.y)] = true
+		if x < c.leftLim || c.leftLim == 0 {
+			c.leftLim = x
+		}
+
+		c.c[fmt.Sprintf("%d,%d", x, from.y)] = stone
 	}
 }
 
@@ -42,7 +57,7 @@ func (c *cave) drawHorizontalLine(from point, dx int) {
 
 func (c *cave) drawLineToTop(from point, dy int) {
 	for y := from.y; y > from.y+dy-1; y-- {
-		c.c[fmt.Sprintf("%d,%d", from.x, y)] = true
+		c.c[fmt.Sprintf("%d,%d", from.x, y)] = stone
 	}
 }
 
@@ -52,7 +67,7 @@ func (c *cave) drawLineToBot(from point, dy int) {
 			c.bottomLim = y
 		}
 
-		c.c[fmt.Sprintf("%d,%d", from.x, y)] = true
+		c.c[fmt.Sprintf("%d,%d", from.x, y)] = stone
 	}
 }
 
@@ -80,14 +95,33 @@ func (c *cave) drawLine(from, to point) {
 }
 
 func (c *cave) drawPoint(p point) {
-	c.c[fmt.Sprintf("%d,%d", p.x, p.y)] = true
+	c.c[fmt.Sprintf("%d,%d", p.x, p.y)] = sand
 }
 
 func (c *cave) isPointTaken(p point, withBottomLim bool) bool {
+	i := c.c[fmt.Sprintf("%d,%d", p.x, p.y)]
+	isTaken := i == stone || i == sand
 
 	if withBottomLim {
-		return c.c[fmt.Sprintf("%d,%d", p.x, p.y)] || p.y == c.bottomLim+2
+		return isTaken || p.y == c.bottomLim+2
 	}
 
-	return c.c[fmt.Sprintf("%d,%d", p.x, p.y)]
+	return isTaken
+}
+
+func (c *cave) print() {
+	for y := 0; y < c.bottomLim+3; y++ {
+		for x := c.leftLim - 200; x < c.rightLim+200; x++ {
+			switch c.c[fmt.Sprintf("%d,%d", x, y)] {
+			case sand:
+				fmt.Print("o")
+			case stone:
+				fmt.Print("#")
+			default:
+				fmt.Print(".")
+			}
+		}
+
+		fmt.Print("\n")
+	}
 }
