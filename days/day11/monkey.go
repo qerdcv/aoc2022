@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 type monkey struct {
 	items        []uint64
 	expression   string
@@ -20,7 +16,6 @@ func newMonkey() *monkey {
 }
 
 func (m *monkey) addItem(item uint64) *monkey {
-	fmt.Println("adding item", item)
 	m.items = append(m.items, item)
 	return m
 }

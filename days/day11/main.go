@@ -34,7 +34,6 @@ func parseMonkeys(source io.Reader) []*monkey {
 		line = strings.Trim(line, " ")
 		attributes := strings.Split(line, ":")
 		attribute, value := attributes[0], strings.Trim(attributes[1], " ")
-		fmt.Println(attribute, value)
 		switch attribute {
 		case "Starting items":
 			for _, itm := range strings.Split(value, " ") {
@@ -74,12 +73,7 @@ func getOverlap(ms []*monkey) uint64 {
 func solveP1(source io.Reader, rounds int, worryLevelDiv uint64) int {
 	ms := parseMonkeys(source)
 	overlap := getOverlap(ms)
-	fmt.Println(overlap)
 	for i := 1; i <= rounds; i++ {
-		if i%100 == 0 {
-			fmt.Printf("Processing %d round.\n", i)
-		}
-
 		for _, m := range ms {
 			for len(m.items) != 0 {
 				item := m.items[0]
@@ -138,16 +132,18 @@ func solveP1(source io.Reader, rounds int, worryLevelDiv uint64) int {
 }
 
 func main() {
-	//{
-	//	f, err := os.Open("days/day11/input.txt")
-	//	if err != nil {
-	//		log.Fatalln(err)
-	//	}
-	//
-	//	fmt.Println(solveP1(f, 20, 3))
-	//}
 	{
 		f, err := os.Open("days/day11/input.txt")
+		defer f.Close()
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		solveP1(f, 20, 3)
+	}
+	{
+		f, err := os.Open("days/day11/input.txt")
+		defer f.Close()
 		if err != nil {
 			log.Fatalln(err)
 		}
