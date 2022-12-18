@@ -9,6 +9,8 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"sync"
+	"sync/atomic"
 )
 
 type pair struct {
@@ -131,21 +133,27 @@ func processPair(pairs [2]string) bool {
 
 	return false
 }
-func processPairs(pairsCh <-chan [2]string) int {
-	pairIdxCnt := 0
-	pairIdx := 0
-	for pairs := range pairsCh {
-		pairIdx += 1
+func processPairs(pairsCh <-chan [2]string) uint64 {
+	var pairIdxCnt uint64 = 0
+	var pairIdx uint64 = 0
+	wg := new(sync.WaitGroup)
 
-		if processPair(pairs) {
-			pairIdxCnt += pairIdx
-		}
+	for pairs := range pairsCh {
+		wg.Add(1)
+		pairIdx += 1
+		go func(wg *sync.WaitGroup, p [2]string, pIdx uint64) {
+			defer wg.Done()
+			if processPair(p) {
+				atomic.AddUint64(&pairIdxCnt, pIdx)
+			}
+		}(wg, pairs, pairIdx)
 	}
 
+	wg.Wait()
 	return pairIdxCnt
 }
 
-func solveP1(source io.Reader) int {
+func solveP1(source io.Reader) uint64 {
 	pairsCh := make(chan [2]string)
 	go writePairsToCh(source, pairsCh)
 	return processPairs(pairsCh)
